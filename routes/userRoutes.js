@@ -52,7 +52,7 @@ router.post("/login", async (req, res) => {
 });
 
 //Profile Route
-router.get("/profile", jwtAuthMiddleware, async (req, res) => {
+router.get("/profile",jwtAuthMiddleware, async (req, res) => {
   try {
     const userData = req.user;
     console.log("User Data :", userData);
