@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-// const bcrypt = require("bcrypt");
+const bcrypt = require("bcrypt");
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -31,7 +31,7 @@ const userSchema = new mongoose.Schema({
   role: {
     type: String,
     enum: ["voter", "admin"],
-    default: voter,
+    default: "voter",
   },
   isVoted: {
     type: Boolean,
@@ -39,5 +39,32 @@ const userSchema = new mongoose.Schema({
   },
 });
 
-const User = mongoose.model("User", personSchema);
+userSchema.pre("save", async function (next) {
+  const person = this;
+  //Hash the password only if it has been modified or new
+  if (!person.isModified("password")) return next();
+  try {
+    //hash password generation
+    const salt = await bcrypt.genSalt(10);
+    //hash password
+    const hashedPassword = await bcrypt.hash(person.password, salt);
+    //Override the plain password with hashed one
+    person.password = hashedPassword;
+
+    next();
+  } catch (err) {
+    return next(err);
+  }
+});
+
+userSchema.methods.comparePassword = async function (candidatePassword) {
+  try {
+    const isMatch = await bcrypt.compare(candidatePassword, this.password);
+    return isMatch;
+  } catch (err) {
+    throw err;
+  }
+};
+
+const User = mongoose.model("User", userSchema);
 module.exports = User;
